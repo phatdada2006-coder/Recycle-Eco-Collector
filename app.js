@@ -298,19 +298,19 @@ function downloadCertificate() {
   ctx.lineWidth = 4;
   ctx.strokeRect(20, 20, 560, 380);
 
-  // 3. หัวข้อใบประกาศ (ภาษาอังกฤษ)
+  // 3. หัวข้อใบประกาศ
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 26px sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('🏆 Certificate of Eco-Achievement', 300, 80);
 
-  // 4. ชื่อผู้รับ (ดึงจาก S.userName อัตโนมัติ)
+  // 4. ชื่อผู้รับ
   ctx.fillStyle = '#c9f26b';
   ctx.font = 'bold 20px sans-serif';
   const displayName = S.userName || 'Luna';
   ctx.fillText(`Presented to: ${displayName}`, 300, 125);
 
-  // 5. สถิติความสำเร็จ (ภาษาอังกฤษแบบสากล)
+  // 5. สถิติความสำเร็จ
   const kg = (S.kg || 0).toFixed(1);
   const co2 = (S.kg * 1.5).toFixed(1);
   const tree = (S.kg * 1.5 / 21).toFixed(1);
@@ -326,16 +326,44 @@ function downloadCertificate() {
   ctx.font = '14px sans-serif';
   ctx.fillText('Thank you for protecting our planet with Recycle & Eco-Collector Platform 🌍', 300, 340);
 
-  // 7. สั่งดาวน์โหลดไฟล์รูปภาพ PNG
-  const a = document.createElement('a');
-  a.download = `Eco-Certificate-${displayName}.png`;
-  a.href = canvas.toDataURL('image/png');
-  a.click();
+  // 7. สั่งแชร์หรือดาวน์โหลด (รองรับทั้งมือถือและคอมพิวเตอร์)
+  const fileName = `Eco-Certificate-${displayName}.png`;
 
-  toast('Downloaded Certificate successfully! 🎓');
-  confetti();
+  canvas.toBlob(async (blob) => {
+    if (!blob) return toast('ເກີດຂໍ້ຜິດພາດໃນການສ້າງໃບຮັບຮອງ', 1);
+
+    const file = new File([blob], fileName, { type: 'image/png' });
+
+    // รองรับการบันทึกรูป/แชร์ บนมือถือโดยตรง
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Eco Certificate',
+          text: 'ໃບຮັບຮອງຄວາມສຳເລັດໃນການຣີໄຊເຄິ 🌍'
+        });
+        toast('ບັນທຶກ ແລະ ແຊຣ ຮຽບຮ້ອຍ! 🎓');
+        confetti();
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // ผู้ใช้กดปุ่มยกเลิกแชร์
+      }
+    }
+
+    // กรณีคอมพิวเตอร์ หรือมือถือที่ไม่รองรับเมนูแชร์
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = fileName;
+    a.href = blobUrl;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+
+    toast('ດາວໂຫຼດຮຽບຮ້ອຍແລ້ວ! 🎓');
+    confetti();
+  }, 'image/png');
 }
-
 function initApp() {
   // เช็คผู้ใช้ล่าสุด (ถ้ามี)
   const lastUser = localStorage.getItem('luna_v6_last_user');
