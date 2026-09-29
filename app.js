@@ -283,74 +283,84 @@ function renderHistory() {
 
 // -------------------------------------------------------------
 // -------------------------------------------------------------
-function downloadCertificate() {
+ function downloadCertificate() {
   const canvas = document.createElement('canvas');
-  canvas.width = 600;
-  canvas.height = 420;
+  // ปรับความละเอียดภาพ Ultra HD (2400x1680 px) คมชัดสูงมาก
+  const width = 1200;
+  const height = 840;
+  canvas.width = width * 2;
+  canvas.height = height * 2;
   const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   // 1. พื้นหลังการ์ดสีเขียวพรีเมียม
   ctx.fillStyle = '#1c6b48';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, width, height);
 
-  // 2. เส้นกรอบสีเขียวอ่อน/ทอง
+  // 2. กรอบนอกสีทอง/เขียวอ่อน
   ctx.strokeStyle = '#c9f26b';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(20, 20, 560, 380);
+  ctx.lineWidth = 6;
+  ctx.strokeRect(30, 30, width - 60, height - 60);
 
-  // 3. หัวข้อใบประกาศ
+  // 3. กรอบชั้นในเพิ่มความหรูหรา
+  ctx.strokeStyle = 'rgba(201, 242, 107, 0.4)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(42, 42, width - 84, height - 84);
+
+  // 4. หัวข้อใบประกาศ
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 26px sans-serif';
+  ctx.font = 'bold 42px "Noto Sans Lao", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('🏆 Certificate of Eco-Achievement', 300, 80);
+  ctx.fillText('CERTIFICATE OF ECO-ACHIEVEMENT', width / 2, 160);
 
-  // 4. ชื่อผู้รับ
+  // 5. ชื่อผู้รับ
   ctx.fillStyle = '#c9f26b';
-  ctx.font = 'bold 20px sans-serif';
+  ctx.font = 'bold 34px "Noto Sans Lao", sans-serif';
   const displayName = S.userName || 'Luna';
-  ctx.fillText(`Presented to: ${displayName}`, 300, 125);
+  ctx.fillText(`Presented to: ${displayName}`, width / 2, 250);
 
-  // 5. สถิติความสำเร็จ
+  // 6. สถิติความสำเร็จ
   const kg = (S.kg || 0).toFixed(1);
   const co2 = (S.kg * 1.5).toFixed(1);
   const tree = (S.kg * 1.5 / 21).toFixed(1);
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = '18px sans-serif';
-  ctx.fillText(`♻️ Recycled Waste: ${kg} kg`, 300, 190);
-  ctx.fillText(`🌱 CO₂ Reduction: ${co2} kg`, 300, 230);
-  ctx.fillText(`🌳 Tree Equivalent: ${tree} trees`, 300, 270);
+  ctx.font = '28px "Noto Sans Lao", sans-serif';
+  ctx.fillText(`Recycled Waste: ${kg} kg`, width / 2, 380);
+  ctx.fillText(`CO₂ Reduction: ${co2} kg`, width / 2, 450);
+  ctx.fillText(`Tree Equivalent: ${tree} trees`, width / 2, 520);
 
-  // 6. ข้อความขอบคุณด้านล่าง
+  // 7. ข้อความขอบคุณด้านล่าง
   ctx.fillStyle = '#d0f0c0';
-  ctx.font = '14px sans-serif';
-  ctx.fillText('Thank you for protecting our planet with Recycle & Eco-Collector Platform 🌍', 300, 340);
+  ctx.font = '20px "Noto Sans Lao", sans-serif';
+  ctx.fillText('Thank you for protecting our planet with Recycle & Eco-Collector Platform', width / 2, 680);
 
-  // 7. สั่งแชร์หรือดาวน์โหลด (รองรับทั้งมือถือและคอมพิวเตอร์)
+  // 8. สั่งแชร์หรือดาวน์โหลด
   const fileName = `Eco-Certificate-${displayName}.png`;
 
   canvas.toBlob(async (blob) => {
-    if (!blob) return toast('ເກີດຂໍ້ຜິດພາດໃນການສ້າງໃບຮັບຮອງ', 1);
+    if (!blob) return toast('ເກີດຂໍ້ຜິດພາດໃນການສ້າງໃບCertificate', 1);
 
     const file = new File([blob], fileName, { type: 'image/png' });
 
-    // รองรับการบันทึกรูป/แชร์ บนมือถือโดยตรง
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
           title: 'Eco Certificate',
-          text: 'ໃບຮັບຮອງຄວາມສຳເລັດໃນການຣີໄຊເຄິ 🌍'
+          text: 'ໃບຮັບຮອງຄວາມສຳເລັດໃນການຣີໄຊຣເຄິ'
         });
-        toast('ບັນທຶກ ແລະ ແຊຣ ຮຽບຮ້ອຍ! 🎓');
+        toast('ບັນທຶກ/ແຊຣຮຽບຮ້ອຍແລ້ວ! 🎓');
         confetti();
         return;
       } catch (err) {
-        if (err.name === 'AbortError') return; // ผู้ใช้กดปุ่มยกเลิกแชร์
+        if (err.name === 'AbortError') return;
       }
     }
 
-    // กรณีคอมพิวเตอร์ หรือมือถือที่ไม่รองรับเมนูแชร์
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.download = fileName;
@@ -360,7 +370,7 @@ function downloadCertificate() {
     document.body.removeChild(a);
     URL.revokeObjectURL(blobUrl);
 
-    toast('ດາວໂຫຼດຮຽບຮ້ອຍແລ້ວ! 🎓');
+    toast('ດາວໂຫຼດໃບCertificateແລ້ວ! 🎓');
     confetti();
   }, 'image/png');
 }
